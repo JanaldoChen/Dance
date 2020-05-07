@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from utils.util import load_pickle_file, coo_matrix_to_torch_sparse_tensor
+from utils.util import load_pickle_file, coo_matrix_to_torch_sparse_tensor, sparse_batch_mm
 
 VERT_NOSE = 331
 VERT_EAR_L = 3485
@@ -196,12 +196,12 @@ def batch_global_rigid_transformation(Rs, Js, parent, rotate_base=False, device=
 
     return new_J, A
 
-def batch_sparse_mm(matrix, batch):
-    """
-    https://github.com/pytorch/pytorch/issues/14489
-    """
-    # TODO: accelerate this with batch operations
-    return torch.stack([matrix.mm(b) for b in batch], dim=0)
+# def batch_sparse_mm(matrix, batch):
+#     """
+#     https://github.com/pytorch/pytorch/issues/14489
+#     """
+#     # TODO: accelerate this with batch operations
+#     return torch.stack([matrix.mm(b) for b in batch], dim=0)
 
 class SMPL(nn.Module):
     def __init__(self, pkl_path, hresMapping_pkl_path='assets/hresMapping.pkl', rotate=False, isHres = False):
@@ -308,7 +308,7 @@ class SMPL(nn.Module):
         J = torch.stack([Jx, Jy, Jz], dim=2)
 
         if self.isHres:
-            v_shaped = batch_sparse_mm(self.mapping, v_shaped.view(num_batch, -1, 1)).view(num_batch, -1, 3)
+            v_shaped = sparse_batch_mm(self.mapping, v_shaped.view(num_batch, -1, 1)).view(num_batch, -1, 3)
         
         if v_personal is not None:
             if not self.isHres:
@@ -331,7 +331,7 @@ class SMPL(nn.Module):
         v_posed = torch.matmul(pose_feature, self.posedirs).view(-1, self.size[0], self.size[1])
         
         if self.isHres:
-            v_posed = batch_sparse_mm(self.mapping, v_posed.view(num_batch, -1, 1)).view(num_batch, -1, 3)
+            v_posed = sparse_batch_mm(self.mapping, v_posed.view(num_batch, -1, 1)).view(num_batch, -1, 3)
         
         v_posed += v_shaped
 
