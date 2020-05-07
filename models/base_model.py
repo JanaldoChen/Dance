@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -112,7 +113,7 @@ class BaseModel(nn.Module):
             if isinstance(name, str):
                 load_filename = '%s_net_%s.pth'%(epoch, name)
                 load_path = os.path.join(self.checkpoints_dir, load_filename)
-                net = getattr(self, model_name)
+                net = getattr(self, name)
                 self.load_state(net, load_path)
     
     def load_state(self, net, load_path):
@@ -127,7 +128,7 @@ class BaseModel(nn.Module):
             if isinstance(name, str):
                 save_filename = '%s_net_%s.pth' % (epoch, name)
                 save_path = os.path.join(self.checkpoints_dir, save_filename)
-                net = getattr(self, model_name)
+                net = getattr(self, name)
                 self.save_state(net, save_path)
                 
     def save_state(self, net, save_path):
