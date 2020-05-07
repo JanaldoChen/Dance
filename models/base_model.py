@@ -22,7 +22,7 @@ class BaseModel(nn.Module):
                 net = getattr(self, 'net_' + name)
                 if len(self.gpu_ids) > 0:
                     assert(torch.cuda.is_available())
-                    net.to(self.gpu_ids[0])
+                    net.to(self.device)
                     net = torch.nn.DataParallel(net, self.gpu_ids)  # multi-GPUs
                 self.init_weights(net, init_type, gain)
 
@@ -127,7 +127,7 @@ class BaseModel(nn.Module):
         if isinstance(net, torch.nn.DataParallel):
             net = net.module
         print('loading the model from %s' % load_path)
-        state_dict = torch.load(load_path)
+        state_dict = torch.load(load_path, map_location=str(self.device))
         net.load_state_dict(state_dict, strict=False)
                 
     def save_networks(self, epoch):
@@ -139,7 +139,7 @@ class BaseModel(nn.Module):
                 self.save_state(net, save_path)
                 
     def save_state(self, net, save_path):
-        if len(self.gpu_ids) > 0 and torch.cuda.is_available():
+        if isinstance(net, torch.nn.DataParallel):
             torch.save(net.module.cpu().state_dict(), save_path)
             net.cuda(self.gpu_ids[0])
         else:
