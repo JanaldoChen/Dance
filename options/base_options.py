@@ -16,7 +16,7 @@ class BaseOptions(object):
         self._parser.add_argument('--deformed', type=float, default=0.1, help='range [-deformed, deformed] for mesh deformation')
         self._parser.add_argument('--gen_tex', action='store_true', help='if need to generate texture')
         self._parser.add_argument('--isHres', action='store_true', help='if use unpooling smpl')
-        self._parser.add_argument('--hmr_state_path', type=str, default='assets/hmr_tf2pt.pth', help='HMR pretrained state path')
+        self._parser.add_argument('--hmr_state_path', type=str, default='outputs/checkpoints/hmr_tf2pt.pth', help='HMR pretrained state path')
         self._parser.add_argument('--smpl_path', type=str, default='assets/smpl_model.pkl', help='SMPL model path')
         self._parser.add_argument('--adj_mat_path', type=str, default='assets/adj_mat_info.pkl', help='adjacency matrix path')
         self._parser.add_argument('--adj_mat_hres_path', type=str, default='assets/adj_mat_hres_info.pkl', help='adjacency matrix hres path')
