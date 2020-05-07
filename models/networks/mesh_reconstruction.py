@@ -12,23 +12,17 @@ from .mesh_deformation import MeshDeformation
 
 class MeshReconstruction(nn.Module):
     
-    def __init__(self, image_size, tex_size=3, gen_tex=True, deformed=0.1, isHres=False, hmr_state_path='assets/hmr_tf2pt.pth', smpl_pkl_path='assets/smpl_model.pkl', adj_mat_pkl_path='assets/adj_mat_info.pkl'):
+    def __init__(self, image_size, tex_size=3, gen_tex=True, deformed=0.1, isHres=False, smpl_pkl_path='assets/smpl_model.pkl', adj_mat_pkl_path='assets/adj_mat_info.pkl'):
         super(MeshReconstruction, self).__init__()
         
         self.gen_tex = gen_tex
         self.deformed = deformed
         
-        
         # Human Mesh Recovery
         self.hmr = HumanModelRecovery()
-        hmr_state = torch.load(hmr_state_path)
-        self.hmr.load_state_dict(hmr_state, strict=False)
         
         # SMPL
         self.smpl = SMPL(pkl_path=smpl_pkl_path, isHres=isHres)
-        
-        # Perceptual Network
-#         self.encoder = Vgg19(pretrained=True, requires_grad=False)
         
         # Perceptual features pooling
         self.pool = GraphProjection()

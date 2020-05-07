@@ -36,6 +36,7 @@ class TrainOptions(BaseOptions):
         self._parser.add_argument('--lambda_mask_personal', type=float, default=0.1, help='lambda mask_personal loss')
         
         self._parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoing')
+        self._parser.add_argument('--start_epoch', type=int, default=0, help='the start epoch for training')
         self._parser.add_argument('--epochs', type=int, default=20, help='the epochs for training')
         self._parser.add_argument('--lr_policy', type=str, default='step', help='learning rate policy. [linear | step | plateau | cosine]')
         self._parser.add_argument('--print_freq', type=int, default=2, help='print train information per print_freq')

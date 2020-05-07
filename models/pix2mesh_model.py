@@ -11,13 +11,12 @@ from .base_model import BaseModel
 
 class Pix2Mesh(BaseModel):
     def __init__(self, opt):
-        super(Pix2Mesh, self).__init__()
+        super(Pix2Mesh, self).__init__(opt)
         
-        self.opt = opt
         if opt.isHres:
             self.opt.adj_mat_path = opt.adj_mat_hres_path
         # Generator
-        self.net_G = MeshReconstruction(image_size=opt.image_size, tex_size=opt.tex_size, deformed=opt.deformed, isHres=opt.isHres, hmr_state_path=opt.hmr_state_path, smpl_pkl_path=opt.smpl_path, adj_mat_pkl_path=opt.adj_mat_path, gen_tex=opt.gen_tex)
+        self.net_G = MeshReconstruction(image_size=opt.image_size, tex_size=opt.tex_size, deformed=opt.deformed, isHres=opt.isHres, smpl_pkl_path=opt.smpl_path, adj_mat_pkl_path=opt.adj_mat_path, gen_tex=opt.gen_tex)
         self.model_names.append('G')
         
         if self.opt.use_loss_gan:
@@ -25,50 +24,52 @@ class Pix2Mesh(BaseModel):
             self.net_D = PatchDiscriminator(input_nc=3)
             self.model_names.append('D')
             
+        self.init_weights()
+            
         # Optimiziers
         self.optimizer_G = torch.optim.Adam(self.net_G.parameters(), lr=opt.G_lr, betas=(opt.G_adam_b1, opt.G_adam_b2))
         self.optimizer_names.append('G')
-        if self.opt.use_loss_gan:
+        if opt.use_loss_gan:
             self.optimizer_D = torch.optim.Adam(self.net_D.parameters(), lr=opt.D_lr, betas=(opt.D_adam_b1, opt.D_adam_b2))
             self.optimizer_names.append('D')
             
         # Loss Functions
         self.loss_names.append('G')
-        if self.opt.use_loss_gan:
+        if opt.use_loss_gan:
             self.criterion_gan = GANLoss(gan_mode=opt.gan_mode, tensor=torch.cuda.FloatTensor)
             self.loss_names.append('gan')
             self.loss_names.append('D_real')
             self.loss_names.append('D_fake')
             self.loss_names.append('D')
-        if self.opt.use_loss_img_masked:
+        if opt.use_loss_img_masked:
             self.criterion_img_masked = nn.MSELoss()
             self.loss_names.append('img_masked')
-        if self.opt.use_loss_mask:
+        if opt.use_loss_mask:
             self.criterion_mask = nn.BCELoss()
             self.loss_names.append('mask')
-        if self.opt.use_loss_mask_personal:
+        if opt.use_loss_mask_personal:
             self.criterion_mask_personal = nn.BCELoss()
             self.loss_names.append('mask_personal')
-        if self.opt.use_loss_shape:
+        if opt.use_loss_shape:
             self.criterion_shape = nn.MSELoss()
             self.loss_names.append('shape')
-        if self.opt.use_loss_pose:
+        if opt.use_loss_pose:
             self.criterion_pose = nn.MSELoss()
             self.loss_names.append('pose')
-        if self.opt.use_loss_verts:
+        if opt.use_loss_verts:
             self.criterion_verts = nn.MSELoss()
             self.loss_names.append('verts')
-        if self.opt.use_loss_verts_personal:
+        if opt.use_loss_verts_personal:
             self.criterion_verts_personal = nn.MSELoss()
             self.loss_names.append('verts_personal')
-        if self.opt.use_loss_v_personal:
+        if opt.use_loss_v_personal:
             self.criterion_v_personal = nn.MSELoss()
             self.loss_names.append('v_personal')
         
         # Scheduler
         self.scheduler_G = lr_scheduler.StepLR(self.optimizer_G, step_size=opt.step_size, gamma=opt.lr_gamma)
         self.scheduler_names.append('G')
-        if self.opt.use_loss_gan:
+        if opt.use_loss_gan:
             self.scheduler_D = lr_scheduler.StepLR(self.optimizer_D, step_size=opt.step_size, gamma=opt.lr_gamma)
             self.scheduler_names.append('D')
         

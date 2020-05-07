@@ -24,14 +24,18 @@ def main():
     
     for fn in os.listdir(opt.log_dir):
         os.remove(os.path.join(opt.log_dir, fn))
-    
+        
+    model.load_state(model.net_G.hmr, opt.hmr_state_path)
     if opt.hmr_no_grad:
         model.set_requires_grad(model.net_G.hmr, requires_grad=False)
+        
+    if opt.resume:
+        model.load_network(opt.start_epoch)
+    
     model.train()
     
-    
     total = len(train_loader.dataset)
-    for epoch in range(opt.epochs):
+    for epoch in range(opt.start_eopch, opt.epochs):
         train_num = 0
         for i, data in enumerate(train_loader):
             
@@ -61,6 +65,8 @@ def main():
                 img_masked_personal = make_grid(img_masked_personal.view(-1, c, h, w).cpu(), nrow=img_masked_personal.size(0), padding=0)
                 
                 save_image([img_masked_personal_gt ,img_masked_gt, img_masked, img_masked_personal], os.path.join(opt.log_dir, "epoch_{:0>2d}_iter_{:0>5d}.png".format(epoch, i)), nrow=1, padding=0)
+        
+        model.save_network(epoch)
     
 if __name__ == '__main__':
     main()

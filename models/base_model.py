@@ -3,8 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class BaseModel(nn.Module):
-    def __init__(self):
+    def __init__(self, opt):
         super(BaseModel, self).__init__()
+        self.opt = opt
+        self.isTrain = opt.isTrain
+        self.gpu_ids = opt.gpu_ids
+        self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')
+        self.checkpoints_dir = opt.checkpoints_dir
         self.model_names = []
         self.loss_names = []
         self.optimizer_names = []
@@ -103,35 +108,35 @@ class BaseModel(nn.Module):
                 for param in net.parameters():
                     param.requires_grad = requires_grad
                     
-#     def load_networks(self, epoch):
-#         for name in self.model_names:
-#             if isinstance(name, str):
-#                 load_filename = '%s_net_%s.pth'%(epoch, name)
-#                 load_path = os.path.join(self.checkpoints_dir, load_filename)
-#                 net = getattr(self, model_name)
-#                 self.load_state(net, load_path)
+    def load_networks(self, epoch):
+        for name in self.model_names:
+            if isinstance(name, str):
+                load_filename = '%s_net_%s.pth'%(epoch, name)
+                load_path = os.path.join(self.checkpoints_dir, load_filename)
+                net = getattr(self, model_name)
+                self.load_state(net, load_path)
     
-#     def load_state(self, net, load_path):
-#         if isinstance(net, torch.nn.DataParallel):
-#             net = net.module
-#         print('loading the model from %s' % load_path)
-#         state_dict = torch.load(load_path)
-#         net.load_state_dict(state_dict, strict=False)
+    def load_state(self, net, load_path):
+        if isinstance(net, torch.nn.DataParallel):
+            net = net.module
+        print('loading the model from %s' % load_path)
+        state_dict = torch.load(load_path)
+        net.load_state_dict(state_dict, strict=False)
                 
-#     def save_networks(self, epoch):
-#         for name in self.model_names:
-#             if isinstance(name, str):
-#                 save_filename = '%s_net_%s.pth' % (epoch, name)
-#                 save_path = os.path.join(self.checkpoints_dir, save_filename)
-#                 net = getattr(self, model_name)
-#                 self.save_state(net, save_path)
+    def save_networks(self, epoch):
+        for name in self.model_names:
+            if isinstance(name, str):
+                save_filename = '%s_net_%s.pth' % (epoch, name)
+                save_path = os.path.join(self.checkpoints_dir, save_filename)
+                net = getattr(self, model_name)
+                self.save_state(net, save_path)
                 
-#     def save_state(self, net, save_path):
-#         if len(self.gpu_ids) > 0 and torch.cuda.is_available():
-#             torch.save(net.module.cpu().state_dict(), save_path)
-#             net.cuda(self.gpu_ids[0])
-#         else:
-#             torch.save(net.cpu().state_dict(), save_path)
+    def save_state(self, net, save_path):
+        if len(self.gpu_ids) > 0 and torch.cuda.is_available():
+            torch.save(net.module.cpu().state_dict(), save_path)
+            net.cuda(self.gpu_ids[0])
+        else:
+            torch.save(net.cpu().state_dict(), save_path)
                 
                     
     def get_loss_vis(self):
