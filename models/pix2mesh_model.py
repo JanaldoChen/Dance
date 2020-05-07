@@ -16,15 +16,15 @@ class Pix2Mesh(BaseModel):
         if opt.isHres:
             self.opt.adj_mat_path = opt.adj_mat_hres_path
         # Generator
-        self.net_G = MeshReconstruction(image_size=opt.image_size, tex_size=opt.tex_size, deformed=opt.deformed, isHres=opt.isHres, smpl_pkl_path=opt.smpl_path, adj_mat_pkl_path=opt.adj_mat_path, gen_tex=opt.gen_tex).to(self.device)
+        self.net_G = MeshReconstruction(image_size=opt.image_size, tex_size=opt.tex_size, deformed=opt.deformed, isHres=opt.isHres, smpl_pkl_path=opt.smpl_path, adj_mat_pkl_path=opt.adj_mat_path, gen_tex=opt.gen_tex)
         self.model_names.append('G')
         
         if self.opt.use_loss_gan:
             # Discriminator
-            self.net_D = PatchDiscriminator(input_nc=3).to(self.device)
+            self.net_D = PatchDiscriminator(input_nc=3)
             self.model_names.append('D')
             
-        self.init_weights()
+        self.initialize()
             
         # Optimiziers
         self.optimizer_G = torch.optim.Adam(self.net_G.parameters(), lr=opt.G_lr, betas=(opt.G_adam_b1, opt.G_adam_b2))

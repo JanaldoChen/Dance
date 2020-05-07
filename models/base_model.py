@@ -16,7 +16,17 @@ class BaseModel(nn.Module):
         self.scheduler_names = []
         self.metric = 0
 
-    def init_weights(self, init_type='normal', gain=0.02):
+    def initialize(self, init_type='normal', gain=0.02):
+        for name in self.model_names:
+            if isinstance(name, str):
+                net = getattr(self, 'net_' + name)
+                if len(self.gpu_ids) > 0:
+                    assert(torch.cuda.is_available())
+                    net.to(self.gpu_ids[0])
+                    net = torch.nn.DataParallel(net, self.gpu_ids)  # multi-GPUs
+                self.init_weights(net, init_type, gain)
+
+    def init_weights(self, net, init_type='normal', gain=0.02):
         def init_func(m):
             classname = m.__class__.__name__
             if classname.find('BatchNorm2d') != -1:
@@ -41,11 +51,8 @@ class BaseModel(nn.Module):
                     raise NotImplementedError('initialization method [%s] is not implemented' % init_type)
                 if hasattr(m, 'bias') and m.bias is not None:
                     nn.init.constant_(m.bias.data, 0.0)
-
-        self.apply(init_func)
-        for m in self.children():
-            if hasattr(m, 'init_weights'):
-                m.init_weights(init_type, gain)
+        print('initialize network with %s' % init_type)
+        net.apply(init_func)
     
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
