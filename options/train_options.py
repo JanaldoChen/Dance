@@ -43,8 +43,6 @@ class TrainOptions(BaseOptions):
         self._parser.add_argument('--hmr_no_grad', action='store_true', help='if hmr need grad')
         self._parser.add_argument('--step_size', type=int, default=2, help='multiply by a gamma every step_size epochs')
         self._parser.add_argument('--lr_gamma', type=float, default=0.5, help='lr decay')
-#         self._parser.add_argument('--lambda_verts', type=float, default=5, help='lambda verts loss')
-#         self._parser.add_argument('--lambda_verts_deformed', type=float, default=10, help='lambda verts deformed loss')
-#        self._parser.add_argument('--without_z', action='store_true', help='if verts loss with z')
+        self._parser.add_argument('--pose_cam_path', type=str, default='assets/pose_cam.pkl', help='the pose cam set path')
         
         self.is_train = True

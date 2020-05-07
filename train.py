@@ -13,7 +13,7 @@ from models.pix2mesh_model import Pix2Mesh
 
 def main():
     opt = TrainOptions().parse()
-    train_dataset = Multi_Garment_Dataset(data_root=opt.data_root, num_frame=opt.num_frame)
+    train_dataset = Multi_Garment_Dataset(data_root=opt.data_root, pose_cam_path=opt.pose_cam_path, num_frame=opt.num_frame)
     train_loader = DataLoader(train_dataset, batch_size=opt.batch_size, shuffle=True)
     model = Pix2Mesh(opt)
     for fn in os.listdir(opt.log_dir):

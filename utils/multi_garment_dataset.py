@@ -10,12 +10,12 @@ from torch.utils.data import Dataset
 from .util import load_pickle_file, load_obj, get_f2vts
 
 class Multi_Garment_Dataset(Dataset):
-    def __init__(self, data_root, pose_cam_pkl_path='pretrains/pose_cam.pkl', people_IDs_list=None, num_frame=1):
+    def __init__(self, data_root, pose_cam_path='assets/pose_cam.pkl', people_IDs_list=None, num_frame=1):
         self.data_root = data_root
         self.num_frame = num_frame
         self.people_IDs = people_IDs_list
         
-        pose_cam_pkl = load_pickle_file(pose_cam_pkl_path)
+        pose_cam_pkl = load_pickle_file(pose_cam_path)
         self.poses = pose_cam_pkl['poses']
         self.cams = pose_cam_pkl['cams']
         
