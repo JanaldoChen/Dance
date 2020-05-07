@@ -6,7 +6,6 @@ class BaseModel(nn.Module):
     def __init__(self, opt):
         super(BaseModel, self).__init__()
         self.opt = opt
-        self.isTrain = opt.isTrain
         self.gpu_ids = opt.gpu_ids
         self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')
         self.checkpoints_dir = opt.checkpoints_dir

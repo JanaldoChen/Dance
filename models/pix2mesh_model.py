@@ -16,12 +16,12 @@ class Pix2Mesh(BaseModel):
         if opt.isHres:
             self.opt.adj_mat_path = opt.adj_mat_hres_path
         # Generator
-        self.net_G = MeshReconstruction(image_size=opt.image_size, tex_size=opt.tex_size, deformed=opt.deformed, isHres=opt.isHres, smpl_pkl_path=opt.smpl_path, adj_mat_pkl_path=opt.adj_mat_path, gen_tex=opt.gen_tex)
+        self.net_G = MeshReconstruction(image_size=opt.image_size, tex_size=opt.tex_size, deformed=opt.deformed, isHres=opt.isHres, smpl_pkl_path=opt.smpl_path, adj_mat_pkl_path=opt.adj_mat_path, gen_tex=opt.gen_tex).to(self.device)
         self.model_names.append('G')
         
         if self.opt.use_loss_gan:
             # Discriminator
-            self.net_D = PatchDiscriminator(input_nc=3)
+            self.net_D = PatchDiscriminator(input_nc=3).to(self.device)
             self.model_names.append('D')
             
         self.init_weights()
@@ -76,12 +76,12 @@ class Pix2Mesh(BaseModel):
     def set_input(self, input):
         with torch.no_grad():
             
-            self.shape_gt = input['shape'].cuda()
-            self.poses_gt = input['poses'].cuda()
-            self.v_personal_gt = input['v_personal'].cuda()
-            self.cams_gt = input['cams'].cuda()
+            self.shape_gt = input['shape'].to(self.device)
+            self.poses_gt = input['poses'].to(self.device)
+            self.v_personal_gt = input['v_personal'].to(self.device)
+            self.cams_gt = input['cams'].to(self.device)
 
-            uv_img, f2vts = input['uv_image'].cuda(), input['f2vts'].cuda()
+            uv_img, f2vts = input['uv_image'].to(self.device), input['f2vts'].to(self.device)
             
             self.batch_size, self.num_frame = self.poses_gt.shape[:2]
             

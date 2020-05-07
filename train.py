@@ -11,16 +11,13 @@ from utils.util import AverageMeter
 from options.train_options import TrainOptions
 from models.pix2mesh_model import Pix2Mesh
 
-device = torch.device('cuda:0')
-torch.cuda.set_device(device)
-
 def main():
     opt = TrainOptions().parse()
     
     train_dataset = Multi_Garment_Dataset(data_root=opt.data_root, pose_cam_path=opt.pose_cam_path, num_frame=opt.num_frame)
     train_loader = DataLoader(train_dataset, batch_size=opt.batch_size, shuffle=True)
     
-    model = Pix2Mesh(opt).cuda()
+    model = Pix2Mesh(opt)
     
     for fn in os.listdir(opt.log_dir):
         os.remove(os.path.join(opt.log_dir, fn))
@@ -35,7 +32,7 @@ def main():
     model.train()
     
     total = len(train_loader.dataset)
-    for epoch in range(opt.start_eopch, opt.epochs):
+    for epoch in range(opt.start_epoch, opt.epochs):
         train_num = 0
         for i, data in enumerate(train_loader):
             
