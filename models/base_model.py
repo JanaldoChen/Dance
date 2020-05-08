@@ -124,7 +124,7 @@ class BaseModel(nn.Module):
             model.load_state_dict(state_dict, strict=False)
     
     def load_checkpoint(self, epoch):
-        checkpoint_path = os.path.join(self.checkpoints_dir, 'model_stata_%d'%(epoch))
+        checkpoint_path = os.path.join(self.checkpoints_dir, 'model_stata_%d.pth'%(epoch))
         print("Loading checkpoint file: %s" % checkpoint_path)
         checkpoint = torch.load(checkpoint_path, map_location=str(self.device))
         for name in self.model_names:
@@ -143,7 +143,7 @@ class BaseModel(nn.Module):
                 optimizer.load_state_dict(checkpoint[optimizer_name], strict=False)
 
     def save_checkpoint(self, epoch):
-        checkpoint_path = os.path.join(self.checkpoints_dir, 'model_stata_%d'%(epoch))
+        checkpoint_path = os.path.join(self.checkpoints_dir, 'model_stata_%d.pth'%(epoch))
         checkpoint = {
             "epoch": epoch,
         }
