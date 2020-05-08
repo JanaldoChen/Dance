@@ -28,7 +28,6 @@ class BaseOptions(object):
             self.initialize()
         opt = self._parser.parse_args()
         opt.is_train = self.is_train
-        self.print_options(opt)
 
         # set gpu ids
         str_ids = opt.gpu_ids.split(',')
@@ -41,6 +40,7 @@ class BaseOptions(object):
             torch.cuda.set_device(opt.gpu_ids[0])
 
         self.opt = opt
+        self.print_options(opt)
         return self.opt
 
     def print_options(self, opt):

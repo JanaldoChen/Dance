@@ -20,11 +20,11 @@ class BaseModel(nn.Module):
         for name in self.model_names:
             if isinstance(name, str):
                 net = getattr(self, 'net_' + name)
+                self.init_weights(net, init_type, gain)
                 if len(self.gpu_ids) > 0:
                     assert(torch.cuda.is_available())
                     net.to(self.device)
                     net = torch.nn.DataParallel(net, self.gpu_ids)  # multi-GPUs
-                self.init_weights(net, init_type, gain)
 
     def init_weights(self, net, init_type='normal', gain=0.02):
         def init_func(m):
