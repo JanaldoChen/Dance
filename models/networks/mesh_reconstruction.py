@@ -103,10 +103,3 @@ class MeshReconstruction(nn.Module):
     def project_to_image(self, vertices, cam, offset_z=0., flip=False, withz=False):
         proj_verts = self.smpl_render.project_to_image(vertices, cam, offset_z=offset_z, flip=flip, withz=withz)
         return proj_verts
-    
-    def set_hmr_no_grad(self):
-        for param in self.hmr.parameters():
-            param.requires_grad = False
-        
-        
-        

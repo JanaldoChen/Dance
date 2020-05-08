@@ -209,7 +209,3 @@ class Pix2Mesh(BaseModel):
         
         self.loss_D.backward(retain_graph=True)
         self.optimizer_D.step()
-        
-        
-        
-        

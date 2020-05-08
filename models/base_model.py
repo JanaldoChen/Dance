@@ -114,37 +114,55 @@ class BaseModel(nn.Module):
             if net is not None:
                 for param in net.parameters():
                     param.requires_grad = requires_grad
-                    
-    def load_networks(self, epoch):
-        for name in self.model_names:
-            if isinstance(name, str):
-                load_filename = '%s_net_%s.pth'%(epoch, name)
-                load_path = os.path.join(self.checkpoints_dir, load_filename)
-                net = getattr(self, 'net_' + name)
-                self.load_state(net, load_path)
     
-    def load_state(self, net, load_path):
-        if isinstance(net, torch.nn.DataParallel):
-            net = net.module
-        print('loading the model from %s' % load_path)
+    def load_state(self, model, load_path):s
+        print('loading the model state from %s' % load_path)
         state_dict = torch.load(load_path, map_location=str(self.device))
-        net.load_state_dict(state_dict, strict=False)
-                
-    def save_networks(self, epoch):
-        for name in self.model_names:
-            if isinstance(name, str):
-                save_filename = '%s_net_%s.pth' % (epoch, name)
-                save_path = os.path.join(self.checkpoints_dir, save_filename)
-                net = getattr(self, 'net_' + name)
-                self.save_state(net, save_path)
-                
-    def save_state(self, net, save_path):
-        if isinstance(net, torch.nn.DataParallel):
-            torch.save(net.module.cpu().state_dict(), save_path)
-            net.cuda(self.gpu_ids[0])
+        if isinstance(model, torch.nn.DataParallel):
+            model.module.load_state_dict(state_dict, strict=False)
         else:
-            torch.save(net.cpu().state_dict(), save_path)
-                
+            model.load_state_dict(state_dict, strict=False)
+    
+    def load_checkpoint(self, epoch):
+        checkpoint_path = os.path.join(self.checkpoints_dir, 'model_stata_%d'%(epoch))
+        print("Loading checkpoint file: %s" % checkpoint_path)
+        checkpoint = torch.load(checkpoint_path, map_location=str(self.device))
+        for name in self.model_names:
+            model_name = 'net_' + name
+            if model_name in checkpoint:
+                model = getattr(self, model_name)
+                if isinstance(model, torch.nn.DataParallel):
+                    model.module.load_state_dict(checkpoint[model_name], strict=False)
+                else:
+                    model.load_state_dict(checkpoint[model_name], strict=False)
+        
+        for name in self.optimizer_names:
+            optimizer_name = 'optimizer_' + name
+            if optimizer_name in checkpoint:
+                optimizer = getattr(self, optimizer_name)
+                optimizer.load_state_dict(checkpoint[optimizer_name], strict=False)
+
+    def save_checkpoint(self, epoch):
+        checkpoint_path = os.path.join(self.checkpoints_dir, 'model_stata_%d'%(epoch))
+        checkpoint = {
+            "epoch": epoch,
+        }
+        for name in self.model_names:
+            model_name = 'net_' + name
+            model = getattr(self, model_name)
+            if isinstance(model, torch.nn.DataParallel):
+                checkpoint[model_name] = model.module.state_dict()
+            else:
+                checkpoint[model_name] = model.state_dict()
+            for k, v in list(checkpoint[model_name].items()):
+                if isinstance(v, torch.Tensor) and v.is_sparse:
+                    checkpoint[model_name].pop(k)
+        for name in self.optimizer_names:
+            optimizer_name = 'optimizer_' + name
+            optimizer = getattr(self, optimizer_name)
+            checkpoint[optimizer_name] = optimizer.state_dict()
+        print("Saving checkpoint file: %s" % checkpoint_path)
+        torch.save(checkpoint, checkpoint_path)
                     
     def get_loss_vis(self):
         loss_vis = {}
