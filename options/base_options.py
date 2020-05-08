@@ -15,6 +15,7 @@ class BaseOptions(object):
         self._parser.add_argument('--num_frame', type=int, default=3, help='number of frames')
         self._parser.add_argument('--tex_size', type=int, default=3, help='texture size for renderer')
         self._parser.add_argument('--deformed', type=float, default=0.1, help='range [-deformed, deformed] for mesh deformation')
+        self._parser.add_argument('--deformed_iterations', type=int, default=3, help='iterations of mesh deformation')
         self._parser.add_argument('--gen_tex', action='store_true', help='if need to generate texture')
         self._parser.add_argument('--isHres', action='store_true', help='if use unpooling smpl')
         self._parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')

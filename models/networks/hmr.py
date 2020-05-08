@@ -5,8 +5,6 @@ from collections import OrderedDict
 import numpy as np
 import h5py
 
-from .smpl import SMPL
-
 
 def subsample(inputs, factor):
     """Subsamples the input along the spatial dimensions.
@@ -261,7 +259,6 @@ class HumanModelRecovery(nn.Module):
     def forward(self, inputs):
         
         img_feats = []
-        img_feats.append(inputs)
         
         out = self.resnet.conv1(inputs)
         

@@ -12,11 +12,12 @@ from .mesh_deformation import MeshDeformation
 
 class MeshReconstruction(nn.Module):
     
-    def __init__(self, image_size, tex_size=3, gen_tex=True, deformed=0.1, isHres=False, smpl_pkl_path='assets/smpl_model.pkl', adj_mat_pkl_path='assets/adj_mat_info.pkl'):
+    def __init__(self, image_size, tex_size=3, gen_tex=True, deformed=0.1, deformed_iterations=3, isHres=False, smpl_pkl_path='assets/smpl_model.pkl', adj_mat_pkl_path='assets/adj_mat_info.pkl'):
         super(MeshReconstruction, self).__init__()
         
         self.gen_tex = gen_tex
         self.deformed = deformed
+        self.deformed_iterations = deformed_iterations
         
         # Human Mesh Recovery
         self.hmr = HumanModelRecovery()
@@ -28,7 +29,7 @@ class MeshReconstruction(nn.Module):
         self.pool = GraphProjection()
         
         # Mesh Deformation
-        self.mesh_deformation = MeshDeformation(feat_dim=771, hid_dim=256, out_dim=3, deformed=self.deformed, adj_mat_pkl_path=adj_mat_pkl_path)
+        self.mesh_deformation = MeshDeformation(feat_dim=768, hid_dim=256, out_dim=3, deformed=self.deformed, adj_mat_pkl_path=adj_mat_pkl_path)
         
         # Neural Render
         if isHres:
@@ -49,15 +50,16 @@ class MeshReconstruction(nn.Module):
         shapes = shapes.view(-1, shapes.shape[-1])
         # Get smpl 3D mesh
         verts = self.get_verts(shapes, poses)
-            
-        # Perceptual features pooling
-        proj_verts = self.project_to_image(verts, cams, flip=False, withz=False)
-        verts_feats = self.pool(imgs_feats, proj_verts)
+        verts_personal = verts
         
-        verts_feats = verts_feats.view(bs, num_frame, verts_feats.shape[-2], verts_feats.shape[-1])
-        verts_feats = verts_feats.mean(1)
+        for _ in range(self.deformed_iterations):
+            # Perceptual features pooling
+            proj_verts = self.project_to_image(verts_personal, cams, flip=False, withz=False)
+            verts_feats = self.pool(imgs_feats, proj_verts)
         
-        if self.deformed > 0:
+            verts_feats = verts_feats.view(bs, num_frame, verts_feats.shape[-2], verts_feats.shape[-1])
+            verts_feats = verts_feats.mean(1)
+        
             v_personal = self.mesh_deformation(verts_feats)
             v_personals = v_personal.unsqueeze(1).repeat(1, num_frame, 1, 1).view(-1, v_personal.shape[-2], v_personal.shape[-1])
             verts_personal = self.get_verts(shapes, poses, v_personals)
