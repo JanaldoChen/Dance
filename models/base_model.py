@@ -115,7 +115,7 @@ class BaseModel(nn.Module):
                 for param in net.parameters():
                     param.requires_grad = requires_grad
     
-    def load_state(self, model, load_path):s
+    def load_state(self, model, load_path):
         print('loading the model state from %s' % load_path)
         state_dict = torch.load(load_path, map_location=str(self.device))
         if isinstance(model, torch.nn.DataParallel):
