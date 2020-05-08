@@ -140,7 +140,7 @@ class BaseModel(nn.Module):
             optimizer_name = 'optimizer_' + name
             if optimizer_name in checkpoint:
                 optimizer = getattr(self, optimizer_name)
-                optimizer.load_state_dict(checkpoint[optimizer_name], strict=False)
+                optimizer.load_state_dict(checkpoint[optimizer_name])
 
     def save_checkpoint(self, epoch):
         checkpoint_path = os.path.join(self.checkpoints_dir, 'model_stata_%d.pth'%(epoch))
