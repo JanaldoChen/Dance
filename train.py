@@ -64,6 +64,7 @@ def main():
                 save_image([img_masked_personal_gt ,img_masked_gt, img_masked, img_masked_personal], os.path.join(opt.log_dir, "epoch_{:0>2d}_iter_{:0>5d}.png".format(epoch, i)), nrow=1, padding=0)
         
         model.save_checkpoint(epoch)
+        model.update_learning_rate()
     
 if __name__ == '__main__':
     main()

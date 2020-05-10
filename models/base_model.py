@@ -19,11 +19,10 @@ class BaseModel(nn.Module):
     def initialize(self, init_type='normal', gain=0.02):
         for name in self.model_names:
             if isinstance(name, str):
-                net = getattr(self, 'net_' + name)
+                net = getattr(self, name)
                 self.init_weights(net, init_type, gain)
-                if len(self.gpu_ids) > 0:
-                    assert(torch.cuda.is_available())
-                    net.to(self.device)
+                net.to(self.device)
+                if len(self.gpu_ids) > 1:
                     net = torch.nn.DataParallel(net, self.gpu_ids)  # multi-GPUs
 
     def init_weights(self, net, init_type='normal', gain=0.02):
@@ -73,7 +72,7 @@ class BaseModel(nn.Module):
         """Update learning rates for all the networks; called at the end of every epoch"""
         for name in self.scheduler_names:
             if isinstance(name, str):
-                scheduler = getattr(self, 'scheduler_' + name)
+                scheduler = getattr(self, name)
                 if self.opt.lr_policy == 'plateau':
                     scheduler.step(self.metric)
                 else:
@@ -81,7 +80,7 @@ class BaseModel(nn.Module):
         
         for name in self.optimizer_names:
             if isinstance(name, str):
-                optimizer = getattr(self, 'optimizer_' + name)
+                optimizer = getattr(self, name)
                 lr = optimizer.param_groups[0]['lr']
                 print(name + '_lr = %.7f' % lr)
     
@@ -93,7 +92,7 @@ class BaseModel(nn.Module):
         print('---------- Networks initialized -------------')
         for name in self.model_names:
             if isinstance(name, str):
-                net = getattr(self, 'net_' + name)
+                net = getattr(self, name)
                 num_params = 0
                 for param in net.parameters():
                     num_params += param.numel()
@@ -127,8 +126,7 @@ class BaseModel(nn.Module):
         checkpoint_path = os.path.join(self.checkpoints_dir, 'model_stata_%d.pth'%(epoch))
         print("Loading checkpoint file: %s" % checkpoint_path)
         checkpoint = torch.load(checkpoint_path, map_location=str(self.device))
-        for name in self.model_names:
-            model_name = 'net_' + name
+        for model_name  in self.model_names:
             if model_name in checkpoint:
                 model = getattr(self, model_name)
                 if isinstance(model, torch.nn.DataParallel):
@@ -136,8 +134,7 @@ class BaseModel(nn.Module):
                 else:
                     model.load_state_dict(checkpoint[model_name], strict=False)
         
-        for name in self.optimizer_names:
-            optimizer_name = 'optimizer_' + name
+        for optimizer_name in self.optimizer_names:
             if optimizer_name in checkpoint:
                 optimizer = getattr(self, optimizer_name)
                 optimizer.load_state_dict(checkpoint[optimizer_name])
@@ -147,8 +144,7 @@ class BaseModel(nn.Module):
         checkpoint = {
             "epoch": epoch,
         }
-        for name in self.model_names:
-            model_name = 'net_' + name
+        for model_name in self.model_names:
             model = getattr(self, model_name)
             if isinstance(model, torch.nn.DataParallel):
                 checkpoint[model_name] = model.module.state_dict()
@@ -157,8 +153,7 @@ class BaseModel(nn.Module):
             for k, v in list(checkpoint[model_name].items()):
                 if isinstance(v, torch.Tensor) and v.is_sparse:
                     checkpoint[model_name].pop(k)
-        for name in self.optimizer_names:
-            optimizer_name = 'optimizer_' + name
+        for optimizer_name in self.optimizer_names:
             optimizer = getattr(self, optimizer_name)
             checkpoint[optimizer_name] = optimizer.state_dict()
         print("Saving checkpoint file: %s" % checkpoint_path)
@@ -168,6 +163,6 @@ class BaseModel(nn.Module):
         loss_vis = {}
         for name in self.loss_names:
             if isinstance(name, str):
-                loss = getattr(self, 'loss_' + name)
+                loss = getattr(self, name)
                 loss_vis[name] = loss.item()
         return loss_vis

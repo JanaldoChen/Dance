@@ -12,7 +12,7 @@ class BaseOptions(object):
         self._parser.add_argument('--checkpoints_dir', type=str, default='outputs/checkpoints',
                                   help='models are saved here')
         self._parser.add_argument('--image_size', type=int, default=224, help='the image size for input')
-        self._parser.add_argument('--num_frame', type=int, default=3, help='number of frames')
+        self._parser.add_argument('--num_frame', type=int, default=4, help='number of frames')
         self._parser.add_argument('--tex_size', type=int, default=3, help='texture size for renderer')
         self._parser.add_argument('--deformed', type=float, default=0.1, help='range [-deformed, deformed] for mesh deformation')
         self._parser.add_argument('--deformed_iterations', type=int, default=3, help='iterations of mesh deformation')
