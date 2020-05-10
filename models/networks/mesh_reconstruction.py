@@ -11,7 +11,7 @@ from .mesh_deformation import MeshDeformation
 
 class MeshReconstruction(nn.Module):
     
-    def __init__(self, deformed=0.1, deformed_iterations=3 adj_mat_pkl_path='assets/adj_mat_info.pkl'):
+    def __init__(self, deformed=0.1, deformed_iterations=3, adj_mat_pkl_path='assets/adj_mat_info.pkl'):
         super(MeshReconstruction, self).__init__()
         
         self.deformed = deformed
