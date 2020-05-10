@@ -50,11 +50,16 @@ def main():
                 print(mess)
                 imgs_vis = model.visualize()
                 
-                img_masked_personal_gt = make_grid(imgs_vis['img_masked_personal_gt'].detach().cpu(), nrow=img_masked_personal_gt.size(0), padding=0)
-                img_masked = make_grid(imgs_vis['img_masked'].detach().cpu(), nrow=img_masked.size(0), padding=0)
-                img_masked_personal = make_grid(imgs_vis['img_masked_personal'].detach().cpu().view(-1, c, h, w).cpu(), nrow=img_masked_personal.size(0), padding=0)
+                imgs_masked_personal_gt = imgs_vis['imgs_masked_personal_gt'].detach().cpu()
+                imgs_masked_personal_gt = make_grid(imgs_masked_personal_gt, nrow=imgs_masked_personal_gt.size(0), padding=0)
+
+                imgs_masked = imgs_vis['imgs_masked'].detach().cpu()
+                imgs_masked = make_grid(imgs_masked, nrow=imgs_masked.size(0), padding=0)
+
+                imgs_masked_personal = imgs_vis['imgs_masked_personal'].detach().cpu()
+                imgs_masked_personal = make_grid(imgs_masked_personal, nrow=imgs_masked_personal.size(0), padding=0)
                 
-                save_image([img_masked_personal_gt, img_masked, img_masked_personal], os.path.join(opt.log_dir, "epoch_{:0>2d}_iter_{:0>5d}.png".format(epoch, i)), nrow=1, padding=0)
+                save_image([imgs_masked_personal_gt, imgs_masked, imgs_masked_personal], os.path.join(opt.log_dir, "epoch_{:0>2d}_iter_{:0>5d}.png".format(epoch, i)), nrow=1, padding=0)
         
         model.save_checkpoint(epoch)
         model.update_learning_rate()
