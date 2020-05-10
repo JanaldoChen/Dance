@@ -17,7 +17,7 @@ class Pix2Mesh(BaseModel):
         if opt.isHres:
             self.opt.adj_mat_path = opt.adj_mat_hres_path
         # smpl
-        self.smpl = SMPL(pkl_path=opt.smpl_pkl_path, isHres=opt.isHres)
+        self.smpl = SMPL(pkl_path=opt.smpl_path, isHres=opt.isHres)
 
         # Neural Render
         
