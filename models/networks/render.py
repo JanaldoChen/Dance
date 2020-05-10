@@ -61,7 +61,7 @@ class SMPLRenderer(nn.Module):
         img_sils = self.render_silhouettes(vertices)
         return imgs, img_sils
     
-    def render(self, vertices, texture, faces=None):
+    def render(self, vertices, texture=None, faces=None):
         if faces is None:
             bs = vertices.shape[0]
             faces = self.faces.repeat(bs, 1, 1)

@@ -4,26 +4,22 @@ import torch.nn.functional as F
 
 import neural_renderer as nr
 
-from .smpl import SMPL
-from .render import SMPLRenderer
+from .render import orthographic_proj_withz_idrot
 from .hmr import HumanModelRecovery
 from .graph_projection import GraphProjection
 from .mesh_deformation import MeshDeformation
 
 class MeshReconstruction(nn.Module):
     
-    def __init__(self, image_size, tex_size=3, gen_tex=True, deformed=0.1, deformed_iterations=3, isHres=False, smpl_pkl_path='assets/smpl_model.pkl', adj_mat_pkl_path='assets/adj_mat_info.pkl'):
+    def __init__(self, deformed=0.1, deformed_iterations=3 adj_mat_pkl_path='assets/adj_mat_info.pkl'):
         super(MeshReconstruction, self).__init__()
         
-        self.gen_tex = gen_tex
         self.deformed = deformed
         self.deformed_iterations = deformed_iterations
+        self.proj_func = orthographic_proj_withz_idrot
         
         # Human Mesh Recovery
         self.hmr = HumanModelRecovery()
-        
-        # SMPL
-        self.smpl = SMPL(pkl_path=smpl_pkl_path, isHres=isHres)
         
         # Perceptual features pooling
         self.pool = GraphProjection()
@@ -31,13 +27,8 @@ class MeshReconstruction(nn.Module):
         # Mesh Deformation
         self.mesh_deformation = MeshDeformation(feat_dim=768, hid_dim=256, out_dim=3, deformed=self.deformed, adj_mat_pkl_path=adj_mat_pkl_path)
         
-        # Neural Render
-        if isHres:
-            self.smpl_render = SMPLRenderer(faces=self.smpl.faces_hres, image_size=image_size, tex_size=tex_size)
-        else:
-            self.smpl_render = SMPLRenderer(faces=self.smpl.faces, image_size=image_size, tex_size=tex_size)
             
-    def forward(self, imgs):
+    def forward(self, imgs, smpl):
         
         bs, num_frame = imgs.shape[:2]
         imgs = imgs.view(-1, imgs.shape[-3], imgs.shape[-2], imgs.shape[-1])
@@ -49,7 +40,7 @@ class MeshReconstruction(nn.Module):
         shapes = shape.unsqueeze(1).repeat(1, num_frame, 1)
         shapes = shapes.view(-1, shapes.shape[-1])
         # Get smpl 3D mesh
-        verts = self.get_verts(shapes, poses)
+        verts = smpl(shapes, poses)
         verts_personal = verts
         
         for _ in range(self.deformed_iterations):
@@ -62,7 +53,7 @@ class MeshReconstruction(nn.Module):
         
             v_personal = self.mesh_deformation(verts_feats)
             v_personals = v_personal.unsqueeze(1).repeat(1, num_frame, 1, 1).view(-1, v_personal.shape[-2], v_personal.shape[-1])
-            verts_personal = self.get_verts(shapes, poses, v_personals)
+            verts_personal = smpl(shapes, poses, v_personals)
             
         
         outputs = {
@@ -75,8 +66,6 @@ class MeshReconstruction(nn.Module):
         }
         
         return outputs
-        
-        #return shape, pose, cam, verts_personal, tex, img, img_sil
     
     def get_shape_pose_cam(self, imgs, get_feats=True):
         # Human mesh recovery from images
@@ -94,14 +83,15 @@ class MeshReconstruction(nn.Module):
         pose = theta[:, 3:75].contiguous()
         return pose
     
-    def get_verts(self, shape, pose, v_personal=None):
-        verts = self.smpl(beta=shape, theta=pose, v_personal=v_personal)
-        return verts
-    
-    def get_render(self, verts, tex):
-        img_masked, mask = self.smpl_render(verts, tex)
-        return img_masked, mask
-    
     def project_to_image(self, vertices, cam, offset_z=0., flip=False, withz=False):
-        proj_verts = self.smpl_render.project_to_image(vertices, cam, offset_z=offset_z, flip=flip, withz=withz)
+        proj_verts = self.proj_func(vertices, cam, offset_z)
+        
+        # if flipping the y-axis here to make it align with the image coordinate system!
+        if flip:
+            proj_verts[:, :, 1] *= -1
+        
+        # if preserving the z
+        if not withz:
+            proj_verts = proj_verts[:, :, 0:2]
+
         return proj_verts

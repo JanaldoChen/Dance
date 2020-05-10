@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.optim import lr_scheduler
 
 from .networks.mesh_reconstruction import MeshReconstruction
+from .networks.smpl import SMPL
 from .networks.discriminator import PatchDiscriminator
 from .networks.loss import GANLoss
 
@@ -15,8 +16,18 @@ class Pix2Mesh(BaseModel):
         
         if opt.isHres:
             self.opt.adj_mat_path = opt.adj_mat_hres_path
+        # smpl
+        self.smpl = SMPL(pkl_path=opt.smpl_pkl_path, isHres=opt.isHres)
+
+        # Neural Render
+        
+        if opt.isHres:
+            faces = self.smpl.faces_hres
+        else:
+            faces = self.smpl.faces
+        self.smpl_render = SMPLRenderer(faces=faces, image_size=opt.image_size, tex_size=opt.tex_size)
         # Generator
-        self.net_G = MeshReconstruction(image_size=opt.image_size, tex_size=opt.tex_size, deformed=opt.deformed, deformed_iterations=opt.deformed_iterations, isHres=opt.isHres, smpl_pkl_path=opt.smpl_path, adj_mat_pkl_path=opt.adj_mat_path, gen_tex=opt.gen_tex)
+        self.net_G = MeshReconstruction(image_size=opt.image_size, deformed=opt.deformed, deformed_iterations=opt.deformed_iterations, adj_mat_pkl_path=opt.adj_mat_path)
         self.model_names.append('net_G')
         
         if self.opt.use_loss_gan:
@@ -98,18 +109,20 @@ class Pix2Mesh(BaseModel):
             
             self.verts_gt = verts
             
-            imgs_masked, masks = self.net_G.get_render(verts, tex)
-            self.imgs_masked_gt = imgs_masked.view(self.batch_size, self.num_frame, imgs_masked.shape[-3], imgs_masked.shape[-2], imgs_masked.shape[-1])
-            self.masks_gt = masks.view(self.batch_size, self.num_frame, masks.shape[-2], masks.shape[-1])
+            if opt.use_loss_img_masked:
+                imgs_masked, masks = self.smpl_render(verts, tex)
+                self.imgs_masked_gt = imgs_masked.view(self.batch_size, self.num_frame, imgs_masked.shape[-3], imgs_masked.shape[-2], imgs_masked.shape[-1])
+                self.masks_gt = masks.view(self.batch_size, self.num_frame, masks.shape[-2], masks.shape[-1])
         
             verts_personal = self.net_G.smpl(shape, pose, v_personal)
             verts_personal = self.net_G.project_to_image(verts_personal, cam, flip=True, withz=True)
             
             self.verts_personal_gt = verts_personal
             
-            imgs_masked_personal, masks_personal = self.net_G.get_render(verts_personal, tex)
-            self.imgs_masked_personal_gt = imgs_masked_personal.view(self.batch_size, self.num_frame, imgs_masked_personal.shape[-3], imgs_masked_personal.shape[-2], imgs_masked_personal.shape[-1])
-            self.masks_personal_gt = masks_personal.view(self.batch_size, self.num_frame, masks_personal.shape[-2], masks_personal.shape[-1])
+            if opt.use_loss_mask_personal:
+                imgs_masked_personal, masks_personal = self.smpl_render(verts_personal, tex)
+                self.imgs_masked_personal_gt = imgs_masked_personal.view(self.batch_size, self.num_frame, imgs_masked_personal.shape[-3], imgs_masked_personal.shape[-2], imgs_masked_personal.shape[-1])
+                self.masks_personal_gt = masks_personal.view(self.batch_size, self.num_frame, masks_personal.shape[-2], masks_personal.shape[-1])
         
         
     def forward(self):
@@ -130,13 +143,15 @@ class Pix2Mesh(BaseModel):
         
         tex = self.tex_gt.unsqueeze(1).repeat(1, self.num_frame, 1, 1, 1, 1, 1).view(-1, self.tex_gt.shape[-5], self.tex_gt.shape[-4], self.tex_gt.shape[-3], self.tex_gt.shape[-2], self.tex_gt.shape[-1])
         
-        imgs_masked, masks = self.net_G.get_render(self.verts, tex)
-        self.imgs_masked = imgs_masked.view(self.batch_size, self.num_frame, imgs_masked.shape[-3], imgs_masked.shape[-2], imgs_masked.shape[-1])
-        self.masks = masks.view(self.batch_size, self.num_frame, masks.shape[-2], masks.shape[-1])
+        if self.opt.use_loss_img_masked:
+            imgs_masked, masks = self.smpl_render(self.verts, tex)
+            self.imgs_masked = imgs_masked.view(self.batch_size, self.num_frame, imgs_masked.shape[-3], imgs_masked.shape[-2], imgs_masked.shape[-1])
+            self.masks = masks.view(self.batch_size, self.num_frame, masks.shape[-2], masks.shape[-1])
         
-        imgs_masked_personal, masks_personal = self.net_G.get_render(self.verts_personal, tex)
-        self.imgs_masked_personal = imgs_masked_personal.view(self.batch_size, self.num_frame, imgs_masked_personal.shape[-3], imgs_masked_personal.shape[-2], imgs_masked_personal.shape[-1])
-        self.masks_personal = masks_personal.view(self.batch_size, self.num_frame, masks_personal.shape[-2], masks_personal.shape[-1])
+        if self.opt.use_loss_mask_personal:
+            imgs_masked_personal, masks_personal = self.smpl_render(self.verts_personal, tex)
+            self.imgs_masked_personal = imgs_masked_personal.view(self.batch_size, self.num_frame, imgs_masked_personal.shape[-3], imgs_masked_personal.shape[-2], imgs_masked_personal.shape[-1])
+            self.masks_personal = masks_personal.view(self.batch_size, self.num_frame, masks_personal.shape[-2], masks_personal.shape[-1])
         
     def optimize_parameters(self):
         self.forward()
