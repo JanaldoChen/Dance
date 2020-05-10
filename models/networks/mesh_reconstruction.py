@@ -11,9 +11,10 @@ from .mesh_deformation import MeshDeformation
 
 class MeshReconstruction(nn.Module):
     
-    def __init__(self, deformed=0.1, deformed_iterations=3, adj_mat_pkl_path='assets/adj_mat_info.pkl'):
+    def __init__(self, num_frame, deformed=0.1, deformed_iterations=3, adj_mat_pkl_path='assets/adj_mat_info.pkl'):
         super(MeshReconstruction, self).__init__()
         
+        self.num_frame = num_frame
         self.deformed = deformed
         self.deformed_iterations = deformed_iterations
         self.proj_func = orthographic_proj_withz_idrot
@@ -30,14 +31,13 @@ class MeshReconstruction(nn.Module):
             
     def forward(self, imgs, smpl):
         
-        bs, num_frame = imgs.shape[:2]
-        imgs = imgs.view(-1, imgs.shape[-3], imgs.shape[-2], imgs.shape[-1])
+        bs = imgs.shape[0] / self.num_frame
         
         shapes, poses, cams, imgs_feats = self.get_shape_pose_cam(imgs)
         
-        shapes = shapes.view(bs, num_frame, shapes.shape[-1])
+        shapes = shapes.view(bs, self.num_frame, shapes.shape[-1])
         shape = shapes.mean(1)
-        shapes = shape.unsqueeze(1).repeat(1, num_frame, 1)
+        shapes = shape.unsqueeze(1).repeat(1, self.num_frame, 1)
         shapes = shapes.view(-1, shapes.shape[-1])
         # Get smpl 3D mesh
         verts = smpl(shapes, poses)
@@ -48,11 +48,11 @@ class MeshReconstruction(nn.Module):
             proj_verts = self.project_to_image(verts_personal, cams, flip=False, withz=False)
             verts_feats = self.pool(imgs_feats, proj_verts)
         
-            verts_feats = verts_feats.view(bs, num_frame, verts_feats.shape[-2], verts_feats.shape[-1])
+            verts_feats = verts_feats.view(bs, self.num_frame, verts_feats.shape[-2], verts_feats.shape[-1])
             verts_feats = verts_feats.mean(1)
         
             v_personal = self.mesh_deformation(verts_feats)
-            v_personals = v_personal.unsqueeze(1).repeat(1, num_frame, 1, 1).view(-1, v_personal.shape[-2], v_personal.shape[-1])
+            v_personals = v_personal.unsqueeze(1).repeat(1, self.num_frame, 1, 1).view(-1, v_personal.shape[-2], v_personal.shape[-1])
             verts_personal = smpl(shapes, poses, v_personals)
             
         

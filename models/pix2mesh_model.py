@@ -115,9 +115,7 @@ class Pix2Mesh(BaseModel):
 
             self.verts_personal_gt = verts_personal
 
-            imgs_masked_personal, masks_personal = self.smpl_render(verts_personal, tex)
-            self.imgs_masked_personal_gt = imgs_masked_personal.view(self.batch_size, self.num_frame, imgs_masked_personal.shape[-3], imgs_masked_personal.shape[-2], imgs_masked_personal.shape[-1])
-            self.masks_personal_gt = masks_personal.view(self.batch_size, self.num_frame, masks_personal.shape[-2], masks_personal.shape[-1])
+            self.imgs_masked_personal_gt, self.masks_personal_gt = self.smpl_render(verts_personal, tex)
 
 
     def forward(self):
