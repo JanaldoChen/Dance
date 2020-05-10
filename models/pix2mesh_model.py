@@ -110,10 +110,6 @@ class Pix2Mesh(BaseModel):
 
             self.verts_gt = verts
 
-            imgs_masked, masks = self.smpl_render(verts, tex)
-            self.imgs_masked_gt = imgs_masked.view(self.batch_size, self.num_frame, imgs_masked.shape[-3], imgs_masked.shape[-2], imgs_masked.shape[-1])
-            self.masks_gt = masks.view(self.batch_size, self.num_frame, masks.shape[-2], masks.shape[-1])
-
             verts_personal = self.smpl(shape, pose, v_personal)
             verts_personal = self.net_G.project_to_image(verts_personal, cam, flip=True, withz=True)
 
@@ -139,16 +135,6 @@ class Pix2Mesh(BaseModel):
 
         self.verts = self.net_G.project_to_image(verts, cam, flip=True, withz=True)
         self.verts_personal = self.net_G.project_to_image(verts_personal, cam, flip=True, withz=True)
-
-        tex = self.tex_gt.unsqueeze(1).repeat(1, self.num_frame, 1, 1, 1, 1, 1).view(-1, self.tex_gt.shape[-5], self.tex_gt.shape[-4], self.tex_gt.shape[-3], self.tex_gt.shape[-2], self.tex_gt.shape[-1])
-
-        imgs_masked, masks = self.smpl_render(self.verts, tex)
-        self.imgs_masked = imgs_masked.view(self.batch_size, self.num_frame, imgs_masked.shape[-3], imgs_masked.shape[-2], imgs_masked.shape[-1])
-        self.masks = masks.view(self.batch_size, self.num_frame, masks.shape[-2], masks.shape[-1])
-
-        imgs_masked_personal, masks_personal = self.smpl_render(self.verts_personal, tex)
-        self.imgs_masked_personal = imgs_masked_personal.view(self.batch_size, self.num_frame, imgs_masked_personal.shape[-3], imgs_masked_personal.shape[-2], imgs_masked_personal.shape[-1])
-        self.masks_personal = masks_personal.view(self.batch_size, self.num_frame, masks_personal.shape[-2], masks_personal.shape[-1])
 
     def optimize_parameters(self):
         self.forward()
@@ -221,3 +207,14 @@ class Pix2Mesh(BaseModel):
 
         self.loss_D.backward(retain_graph=True)
         self.optimizer_D.step()
+
+    def visualize(self):
+        tex = self.tex_gt.unsqueeze(1).repeat(1, self.num_frame, 1, 1, 1, 1, 1).view(-1, self.tex_gt.shape[-5], self.tex_gt.shape[-4], self.tex_gt.shape[-3], self.tex_gt.shape[-2], self.tex_gt.shape[-1])
+        imgs_masked = self.smpl_render.render(self.verts, tex)
+        imgs_masked_personal = self.smpl_render.render(self.verts_personal, tex)
+        imgs_vis = {
+            'imgs_masked_personal_gt': self.imgs_masked_personal_gt,
+            'imgs_masked': imgs_masked,
+            'imgs_masked_personal': imgs_masked_personal
+        }
+        return imgs_vis

@@ -82,7 +82,7 @@ class BaseModel(nn.Module):
             if isinstance(name, str):
                 optimizer = getattr(self, name)
                 lr = optimizer.param_groups[0]['lr']
-                print(name + '_lr = %.7f' % lr)
+                print(name + '_lr = %f' % lr)
     
     def print_networks(self, verbose=True):
         """Print the total number of parameters in the network and (if verbose) network architecture

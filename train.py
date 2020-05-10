@@ -48,20 +48,13 @@ def main():
                 for name in loss_vis:
                     mess += " | " + "loss_%s: %.7f"%(name, loss_vis[name])
                 print(mess)
-                c, h, w = model.imgs_masked_personal_gt.shape[-3:]
-                img_masked_personal_gt = model.imgs_masked_personal_gt.detach().view(-1, c, h, w).cpu()
-                img_masked_personal_gt = make_grid(img_masked_personal_gt, nrow=img_masked_personal_gt.size(0), padding=0)
+                imgs_vis = model.visualize()
                 
-                img_masked_gt = model.imgs_masked_gt.detach().view(-1, c, h, w).cpu()
-                img_masked_gt = make_grid(img_masked_gt, nrow=img_masked_gt.size(0), padding=0)
+                img_masked_personal_gt = make_grid(imgs_vis['img_masked_personal_gt'].detach().cpu(), nrow=img_masked_personal_gt.size(0), padding=0)
+                img_masked = make_grid(imgs_vis['img_masked'].detach().cpu(), nrow=img_masked.size(0), padding=0)
+                img_masked_personal = make_grid(imgs_vis['img_masked_personal'].detach().cpu().view(-1, c, h, w).cpu(), nrow=img_masked_personal.size(0), padding=0)
                 
-                img_masked = model.imgs_masked.detach().view(-1, c, h, w).cpu()
-                img_masked = make_grid(img_masked, nrow=img_masked.size(0), padding=0)
-                
-                img_masked_personal = model.imgs_masked_personal.detach().view(-1, c, h, w).cpu()
-                img_masked_personal = make_grid(img_masked_personal.view(-1, c, h, w).cpu(), nrow=img_masked_personal.size(0), padding=0)
-                
-                save_image([img_masked_personal_gt ,img_masked_gt, img_masked, img_masked_personal], os.path.join(opt.log_dir, "epoch_{:0>2d}_iter_{:0>5d}.png".format(epoch, i)), nrow=1, padding=0)
+                save_image([img_masked_personal_gt, img_masked, img_masked_personal], os.path.join(opt.log_dir, "epoch_{:0>2d}_iter_{:0>5d}.png".format(epoch, i)), nrow=1, padding=0)
         
         model.save_checkpoint(epoch)
         model.update_learning_rate()

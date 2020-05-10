@@ -37,13 +37,13 @@ class TrainOptions(BaseOptions):
         
         self._parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoing')
         self._parser.add_argument('--start_epoch', type=int, default=0, help='the start epoch for training')
-        self._parser.add_argument('--epochs', type=int, default=20, help='the epochs for training')
+        self._parser.add_argument('--epochs', type=int, default=50, help='the epochs for training')
         self._parser.add_argument('--lr_policy', type=str, default='step', help='learning rate policy. [linear | step | plateau | cosine]')
         self._parser.add_argument('--print_freq', type=int, default=2, help='print train information per print_freq')
         self._parser.add_argument('--log_dir', type=str, default='outputs/logs', help='the logs for visualize')
         self._parser.add_argument('--hmr_no_grad', action='store_true', help='if hmr need grad')
-        self._parser.add_argument('--step_size', type=int, default=2, help='multiply by a gamma every step_size epochs')
-        self._parser.add_argument('--lr_gamma', type=float, default=0.5, help='lr decay')
+        self._parser.add_argument('--step_size', type=int, default=5, help='multiply by a gamma every step_size epochs')
+        self._parser.add_argument('--lr_gamma', type=float, default=0.1, help='lr decay')
         self._parser.add_argument('--pose_cam_path', type=str, default='assets/pose_cam.pkl', help='the pose cam set path')
         
         self.is_train = True
