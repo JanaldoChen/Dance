@@ -14,7 +14,7 @@ class MeshDeformation(nn.Module):
         adj_mat_info = load_pickle_file(adj_mat_pkl_path)
         adj_mat = torch_sparse_tensor(adj_mat_info['indices'], adj_mat_info['value'], adj_mat_info['size'])
         
-        self.deformation = GBottleneck(4, feat_dim, hid_dim, out_dim, adj_mat, activation='relu')
+        self.deformation = GBottleneck(2, feat_dim, hid_dim, out_dim, adj_mat, activation='relu')
         
         self.to_verts = nn.Tanh()
         
