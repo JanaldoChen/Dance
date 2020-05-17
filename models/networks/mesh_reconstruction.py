@@ -79,7 +79,7 @@ class MeshReconstruction(nn.Module):
 
     def get_pose(self, imgs):
         with torch.no_grad():
-            theta, _ = self.hmr(imgs)
+            theta, _ = self.hmr(imgs, get_feats=False)
         pose = theta[:, 3:75].contiguous()
         return pose
 
