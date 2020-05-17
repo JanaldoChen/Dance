@@ -234,3 +234,41 @@ class SMPLRenderer(nn.Module):
     
     def debug_textures(self):
         return torch.ones((self.nf, self.tex_size, self.tex_size, self.tex_size, 3), dtype=torch.float32)
+
+    def get_vis_f2pts(f2pts, fims):
+        """
+        Args:
+            f2pts: (bs, f, 3, 2) or (bs, f, 3, 3)
+            fims:  (bs, 256, 256)
+        Returns:
+        """
+
+        def get_vis(orig_f2pts, fim):
+            """
+            Args:
+                orig_f2pts: (f, 3, 2) or (f, 3, 3)
+                fim: (256, 256)
+            Returns:
+                vis_f2pts: (f, 3, 2)
+            """
+            vis_f2pts = torch.zeros_like(orig_f2pts) - 2.0
+            # 0 is -1
+            face_ids = fim.unique()[1:].long()
+            vis_f2pts[face_ids] = orig_f2pts[face_ids]
+
+            return vis_f2pts
+
+        # import ipdb
+        # ipdb.set_trace()
+        if f2pts.dim() == 4:
+            all_vis_f2pts = []
+            bs = f2pts.shape[0]
+            for i in range(bs):
+                all_vis_f2pts.append(get_vis(f2pts[i], fims[i]))
+
+            all_vis_f2pts = torch.stack(all_vis_f2pts, dim=0)
+
+        else:
+            all_vis_f2pts = get_vis(f2pts, fims)
+
+        return all_vis_f2pts

@@ -256,7 +256,7 @@ class HumanModelRecovery(nn.Module):
         self.regressor = ThetaRegressor(feature_dim + theta_dim, theta_dim, iterations)
         self.iterations = iterations
 
-    def forward(self, inputs):
+    def forward(self, inputs, get_feats=True):
         
         img_feats = []
         
@@ -288,8 +288,9 @@ class HumanModelRecovery(nn.Module):
 
         # regressor
         thetas = self.regressor(features)
-
-        return thetas, img_feats
+        if get_feats:
+            return thetas, img_feats
+        return thetas
 
     def get_details(self, theta):
         """
@@ -306,7 +307,6 @@ class HumanModelRecovery(nn.Module):
         shape = theta[:, 75:].contiguous()
 
         detail_info = {
-            'theta': theta,
             'cam': cam,
             'pose': pose,
             'shape': shape
