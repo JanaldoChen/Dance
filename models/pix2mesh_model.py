@@ -15,6 +15,8 @@ class Pix2Mesh(BaseModel):
     def __init__(self, opt):
         super(Pix2Mesh, self).__init__(opt)
 
+        self.num_frame = opt.num_frame
+
         if opt.isHres:
             self.opt.adj_mat_path = opt.adj_mat_hres_path
         # smpl
@@ -28,7 +30,7 @@ class Pix2Mesh(BaseModel):
             faces = self.smpl.faces
         self.smpl_render = SMPLRenderer(faces=faces, image_size=opt.image_size, tex_size=opt.tex_size).to(self.device)
         # Generator
-        self.net_G = MeshReconstruction(deformed=opt.deformed, deformed_iterations=opt.deformed_iterations, adj_mat_pkl_path=opt.adj_mat_path)
+        self.net_G = MeshReconstruction(num_frame=self.num_frame, deformed=opt.deformed, deformed_iterations=opt.deformed_iterations, adj_mat_pkl_path=opt.adj_mat_path)
         self.model_names.append('net_G')
 
         if self.opt.use_loss_gan:
@@ -95,7 +97,7 @@ class Pix2Mesh(BaseModel):
 
             uv_img, f2vts = input['uv_image'].to(self.device), input['f2vts'].to(self.device)
 
-            self.batch_size, self.num_frame = self.poses_gt.shape[:2]
+            self.batch_size = self.shape_gt.shape[0]
 
             self.tex_gt = self.smpl_render.extract_tex(uv_img, self.smpl_render.points_to_sampler(f2vts))
 
