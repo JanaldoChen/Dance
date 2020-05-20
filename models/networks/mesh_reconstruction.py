@@ -31,7 +31,7 @@ class MeshReconstruction(nn.Module):
             
     def forward(self, imgs, smpl):
         
-        bs = imgs.shape[0] / self.num_frame
+        bs = int(imgs.shape[0] / self.num_frame)
         
         shapes, poses, cams, imgs_feats = self.get_shape_pose_cam(imgs)
         

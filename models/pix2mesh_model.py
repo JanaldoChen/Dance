@@ -28,7 +28,7 @@ class Pix2Mesh(BaseModel):
             faces = self.smpl.faces
         self.smpl_render = SMPLRenderer(faces=faces, image_size=opt.image_size, tex_size=opt.tex_size).to(self.device)
         # Generator
-        self.net_G = MeshReconstruction(deformed=opt.deformed, deformed_iterations=opt.deformed_iterations, adj_mat_pkl_path=opt.adj_mat_path)
+        self.net_G = MeshReconstruction(num_frame=opt.num_frame, deformed=opt.deformed, deformed_iterations=opt.deformed_iterations, adj_mat_pkl_path=opt.adj_mat_path)
         self.model_names.append('net_G')
 
         if self.opt.use_loss_gan:
@@ -53,12 +53,9 @@ class Pix2Mesh(BaseModel):
             self.loss_names.append('loss_D_real')
             self.loss_names.append('loss_D_fake')
             self.loss_names.append('loss_D')
-        if opt.use_loss_img_masked:
-            self.criterion_img_masked = nn.MSELoss()
-            self.loss_names.append('loss_img_masked')
-        if opt.use_loss_mask:
-            self.criterion_mask = nn.BCELoss()
-            self.loss_names.append('loss_mask')
+        if opt.use_loss_img_masked_personal:
+            self.criterion_img_masked_personal = nn.MSELoss()
+            self.loss_names.append('loss_img_masked_personal')
         if opt.use_loss_mask_personal:
             self.criterion_mask_personal = nn.BCELoss()
             self.loss_names.append('loss_mask_personal')
@@ -134,6 +131,9 @@ class Pix2Mesh(BaseModel):
         self.verts = self.net_G.project_to_image(verts, cam, flip=True, withz=True)
         self.verts_personal = self.net_G.project_to_image(verts_personal, cam, flip=True, withz=True)
 
+        tex = self.tex_gt.unsqueeze(1).repeat(1, self.num_frame, 1, 1, 1, 1, 1).view(-1, self.tex_gt.shape[-5], self.tex_gt.shape[-4], self.tex_gt.shape[-3], self.tex_gt.shape[-2], self.tex_gt.shape[-1])
+        self.imgs_masked_personal, self.masks_personal = self.smpl_render(self.verts_personal, tex)
+
     def optimize_parameters(self):
         self.forward()
 
@@ -154,41 +154,37 @@ class Pix2Mesh(BaseModel):
         self.loss_G = 0
 
         if self.opt.use_loss_gan:
-            D_fake_out = self.net_D(self.imgs_masked)
+            D_fake_out = self.net_D(self.imgs_masked_personal)
             self.loss_gan = self.criterion_gan(D_fake_out, True)
             self.loss_G += self.loss_gan
 
-        if self.opt.use_loss_img_masked:
-            self.loss_img_masked = self.opt.lambda_img_masked * self.criterion_img_masked(self.imgs_masked, self.imgs_masked_tex_gt)
-            self.loss_G += self.loss_img_masked
-
-        if self.opt.use_loss_mask:
-            self.loss_mask = self.opt.lambda_mask * self.criterion_mask(self.masks, self.masks_gt)
-            self.loss_G += self.loss_mask
+        if self.opt.use_loss_img_masked_personal:
+            self.loss_img_masked_personal = self.criterion_img_masked_personal(self.imgs_masked_personal, self.imgs_masked_personal_gt)
+            self.loss_G += self.opt.lambda_img_masked_personal * self.loss_img_masked_personal
 
         if self.opt.use_loss_mask_personal:
-            self.loss_mask_personal = self.opt.lambda_mask_personal * self.criterion_mask_personal(self.masks_personal, self.masks_personal_gt)
-            self.loss_G += self.loss_mask_personal
+            self.loss_mask_personal = self.criterion_mask_personal(self.masks_personal, self.masks_personal_gt)
+            self.loss_G += self.opt.lambda_mask_personal * self.loss_mask_personal
 
         if self.opt.use_loss_shape:
-            self.loss_shape = self.opt.lambda_shape * self.criterion_shape(self.shape, self.shape_gt)
-            self.loss_G += self.loss_shape
+            self.loss_shape = self.criterion_shape(self.shape, self.shape_gt)
+            self.loss_G += self.opt.lambda_shape * self.loss_shape
 
         if self.opt.use_loss_pose:
-            self.loss_pose = self.opt.lambda_pose * self.criterion_pose(self.poses, self.poses_gt)
-            self.loss_G += self.loss_pose
+            self.loss_pose = self.criterion_pose(self.poses, self.poses_gt)
+            self.loss_G += self.opt.lambda_pose * self.loss_pose
 
         if self.opt.use_loss_v_personal:
-            self.loss_v_personal = self.opt.lambda_v_personal * self.criterion_v_personal(self.v_personal, self.v_personal_gt)
-            self.loss_G += self.loss_v_personal
+            self.loss_v_personal = self.criterion_v_personal(self.v_personal, self.v_personal_gt)
+            self.loss_G += self.opt.lambda_v_personal * self.loss_v_personal
 
         if self.opt.use_loss_verts:
-            self.loss_verts = self.opt.lambda_verts * self.criterion_verts(self.verts, self.verts_gt)
-            self.loss_G += self.loss_verts
+            self.loss_verts = self.criterion_verts(self.verts, self.verts_gt)
+            self.loss_G += self.opt.lambda_verts * self.loss_verts
 
         if self.opt.use_loss_verts_personal:
-            self.loss_verts_personal = self.opt.lambda_verts_personal * self.criterion_verts_personal(self.verts_personal, self.verts_personal_gt)
-            self.loss_G += self.loss_verts_personal
+            self.loss_verts_personal = self.criterion_verts_personal(self.verts_personal, self.verts_personal_gt)
+            self.loss_G += self.opt.lambda_verts_personal * self.loss_verts_personal
 
         self.loss_G.backward()
         self.optimizer_G.step()
@@ -197,8 +193,8 @@ class Pix2Mesh(BaseModel):
         self.set_requires_grad(self.net_D, True)
         self.optimizer_D.zero_grad()
 
-        D_real_out = self.net_D(self.imgs_masked_gt)
-        D_fake_out = self.net_D(self.imgs_masked)
+        D_real_out = self.net_D(self.imgs_masked_personal_gt)
+        D_fake_out = self.net_D(self.imgs_masked_personal)
         self.loss_D_real = self.criterion_gan(D_real_out, True)
         self.loss_D_fake = self.criterion_gan(D_fake_out, False)
         self.loss_D = (self.loss_D_real + self.loss_D_fake) / 2
@@ -207,12 +203,12 @@ class Pix2Mesh(BaseModel):
         self.optimizer_D.step()
 
     def visualize(self):
-        tex = self.tex_gt.unsqueeze(1).repeat(1, self.num_frame, 1, 1, 1, 1, 1).view(-1, self.tex_gt.shape[-5], self.tex_gt.shape[-4], self.tex_gt.shape[-3], self.tex_gt.shape[-2], self.tex_gt.shape[-1])
-        imgs_masked = self.smpl_render.render(self.verts, tex)
-        imgs_masked_personal = self.smpl_render.render(self.verts_personal, tex)
+        with torch.no_grad():
+            tex = self.tex_gt.unsqueeze(1).repeat(1, self.num_frame, 1, 1, 1, 1, 1).view(-1, self.tex_gt.shape[-5], self.tex_gt.shape[-4], self.tex_gt.shape[-3], self.tex_gt.shape[-2], self.tex_gt.shape[-1])
+            imgs_masked = self.smpl_render.render(self.verts, tex)
         imgs_vis = {
             'imgs_masked_personal_gt': self.imgs_masked_personal_gt,
             'imgs_masked': imgs_masked,
-            'imgs_masked_personal': imgs_masked_personal
+            'imgs_masked_personal': self.imgs_masked_personal
         }
         return imgs_vis

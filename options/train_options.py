@@ -18,6 +18,7 @@ class TrainOptions(BaseOptions):
         self._parser.add_argument('--use_loss_gan', action='store_true', help='if use gan loss')
         self._parser.add_argument('--use_loss_img_masked', action='store_true', help='if use img_masked loss')
         self._parser.add_argument('--use_loss_mask', action='store_true', help='if use mask loss')
+        self._parser.add_argument('--use_loss_img_masked_personal', action='store_true', help='if use img_masked_personal loss')
         self._parser.add_argument('--use_loss_mask_personal', action='store_true', help='if use mask_personal loss')
         self._parser.add_argument('--use_loss_shape', action='store_true', help='if use shape loss')
         self._parser.add_argument('--use_loss_pose', action='store_true', help='if use pose loss')
@@ -33,6 +34,7 @@ class TrainOptions(BaseOptions):
         self._parser.add_argument('--lambda_v_personal', type=float, default=100, help='lambda v_personal loss')
         self._parser.add_argument('--lambda_img_masked', type=float, default=10, help='lambda image masked loss')
         self._parser.add_argument('--lambda_mask', type=float, default=0.1, help='lambda mask loss')
+        self._parser.add_argument('--lambda_img_masked_personal', type=float, default=10, help='lambda image_masked_personal loss')
         self._parser.add_argument('--lambda_mask_personal', type=float, default=0.1, help='lambda mask_personal loss')
         
         self._parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoing')

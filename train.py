@@ -46,7 +46,7 @@ def main():
                 loss_vis = model.get_loss_vis()
                 mess = "Epoch %d: [%d / %d]"%(epoch, train_num, total)
                 for name in loss_vis:
-                    mess += " | " + "loss_%s: %.7f"%(name, loss_vis[name])
+                    mess += " | " + "%s: %.7f"%(name, loss_vis[name])
                 print(mess)
                 imgs_vis = model.visualize()
                 
