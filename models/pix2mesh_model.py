@@ -18,7 +18,9 @@ class Pix2Mesh(BaseModel):
         self.num_frame = opt.num_frame
 
         if opt.isHres:
-            self.opt.adj_mat_path = opt.adj_mat_hres_path
+            adj_mat_path = opt.adj_mat_hres_path
+        else:
+            adj_mat_path = opt.adj_mat_path
         # smpl
         self.smpl = SMPL(pkl_path=opt.smpl_path, isHres=opt.isHres).to(self.device)
 
@@ -30,7 +32,7 @@ class Pix2Mesh(BaseModel):
             faces = self.smpl.faces
         self.smpl_render = SMPLRenderer(faces=faces, image_size=opt.image_size, tex_size=opt.tex_size).to(self.device)
         # Generator
-        self.net_G = MeshReconstruction(num_frame=self.num_frame, deformed=opt.deformed, deformed_iterations=opt.deformed_iterations, adj_mat_pkl_path=opt.adj_mat_path)
+        self.net_G = MeshReconstruction(num_frame=self.num_frame, deformed=opt.deformed, deformed_iterations=opt.deformed_iterations, adj_mat_pkl_path=adj_mat_path)
         self.model_names.append('net_G')
 
         if self.opt.use_loss_gan:
@@ -83,6 +85,10 @@ class Pix2Mesh(BaseModel):
         if opt.use_loss_gan:
             self.scheduler_D = lr_scheduler.StepLR(self.optimizer_D, step_size=opt.step_size, gamma=opt.lr_gamma)
             self.scheduler_names.append('scheduler_D')
+
+    def initialize(self):
+        BaseModel.initialize(self)
+        self.load_state(self.net_G.hmr, self.opt.hmr_state_path)
 
     def set_input(self, input):
         with torch.no_grad():

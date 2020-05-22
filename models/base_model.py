@@ -17,6 +17,7 @@ class BaseModel(nn.Module):
         self.metric = 0
 
     def initialize(self, init_type='normal', gain=0.02):
+        print('initialize network with %s' % init_type)
         for name in self.model_names:
             if isinstance(name, str):
                 net = getattr(self, name)
@@ -50,7 +51,6 @@ class BaseModel(nn.Module):
                     raise NotImplementedError('initialization method [%s] is not implemented' % init_type)
                 if hasattr(m, 'bias') and m.bias is not None:
                     nn.init.constant_(m.bias.data, 0.0)
-        print('initialize network with %s' % init_type)
         net.apply(init_func)
     
     def set_input(self, input):

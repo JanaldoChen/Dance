@@ -10,11 +10,11 @@ from torch.utils.data import Dataset
 from .util import load_pickle_file, load_obj, get_f2vts
 
 class Multi_Garment_Dataset(Dataset):
-    def __init__(self, data_root, pose_cam_path='assets/pose_cam.pkl', people_IDs_list=None, num_frame=1):
+    def __init__(self, data_root, pose_cam_path='assets/pose_cam.pkl', people_IDs_list=None, num_frame=1, isHres=True):
         self.data_root = data_root
         self.num_frame = num_frame
         self.people_IDs = people_IDs_list
-        
+        self.isHres = isHres
         pose_cam_pkl = load_pickle_file(pose_cam_path)
         self.poses = pose_cam_pkl['poses']
         self.cams = pose_cam_pkl['cams']
@@ -37,13 +37,17 @@ class Multi_Garment_Dataset(Dataset):
         cams = torch.from_numpy(self.cams[IDs]).float()
         
         v_personal = torch.from_numpy(smpl_registered_pkl['v_personal']).float()
+        if not self.isHres:
+            v_personal = v_personal[:6890, :]
         
         uv_img = Image.open(os.path.join(self.data_root, people_ID, 'registered_tex.jpg')).convert('RGB')
         uv_img = self.ToTensor(uv_img)
-        
-        f2vts = get_f2vts(os.path.join(self.data_root, people_ID, 'smpl_registered.obj'))
-        f2vts = torch.from_numpy(f2vts)
-        
+        if self.isHres:
+            vt, ft = load_pickle_file('assets/smpl_vt_ft_hres.pkl')
+        else:
+            vt, ft = load_pickle_file('assets/smpl_vt_ft.pkl')
+        f2vts = torch.from_numpy(get_f2vts(vt, ft)).float()
+
         output = {
             'shape': shape,
             'poses': poses,

@@ -6,8 +6,8 @@ class TrainOptions(BaseOptions):
         
         self._parser.add_argument('--train_file', type=str, default='train.txt', help='train ids file')
         self._parser.add_argument('--val_file', type=str, default='val.txt', help='val ids file')
-        self._parser.add_argument('--G_lr', type=float, default=1e-5, help='learning rate for generator')
-        self._parser.add_argument('--D_lr', type=float, default=1e-5, help='learning rate for discriminator')
+        self._parser.add_argument('--G_lr', type=float, default=1e-4, help='learning rate for generator')
+        self._parser.add_argument('--D_lr', type=float, default=1e-4, help='learning rate for discriminator')
         self._parser.add_argument('--G_adam_b1', type=float, default=0.5, help='adam beta1 for generator')
         self._parser.add_argument('--G_adam_b2', type=float, default=0.999, help='adam beta2 for generator')
         self._parser.add_argument('--D_adam_b1', type=float, default=0.5, help='adam beta1 for discriminator')
@@ -25,6 +25,7 @@ class TrainOptions(BaseOptions):
         self._parser.add_argument('--use_loss_verts', action='store_true', help='if use verts loss')
         self._parser.add_argument('--use_loss_verts_personal', action='store_true', help='if use verts_personal loss')
         self._parser.add_argument('--use_loss_v_personal', action='store_true', help='if use v_personal loss')
+        self._parser.add_argument('--use_loss_rec', action='store_true', help='if use rec loss')
         
         self._parser.add_argument('--lambda_gan', type=float, default=1, help='lambda gan loss')
         self._parser.add_argument('--lambda_shape', type=float, default=0.1, help='lambda shape loss')
@@ -36,6 +37,7 @@ class TrainOptions(BaseOptions):
         self._parser.add_argument('--lambda_mask', type=float, default=0.1, help='lambda mask loss')
         self._parser.add_argument('--lambda_img_masked_personal', type=float, default=10, help='lambda image_masked_personal loss')
         self._parser.add_argument('--lambda_mask_personal', type=float, default=0.1, help='lambda mask_personal loss')
+        self._parser.add_argument('--lambda_rec', type=float, default=10, help='lambda rec loss')
         
         self._parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoing')
         self._parser.add_argument('--start_epoch', type=int, default=0, help='the start epoch for training')

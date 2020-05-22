@@ -14,17 +14,25 @@ from models.pix2mesh_model import Pix2Mesh
 def main():
     opt = TrainOptions().parse()
 
-    train_dataset = Multi_Garment_Dataset(data_root=opt.data_root, pose_cam_path=opt.pose_cam_path, num_frame=opt.num_frame)
+    opt.use_loss_verts = True
+    opt.use_loss_v_personal = True
+    opt.lambda_verts = 100
+    opt.lambda_v_personal = 100
+    opt.isHres = True
+    opt.G_lr = 1e-5
+    opt.batch_size = 2
+    opt.num_frame = 4
+    opt.epochs = 20
+    opt.step_size = 2
+    opt.lr_gamma = 0.5
+
+    train_dataset = Multi_Garment_Dataset(data_root=opt.data_root, pose_cam_path=opt.pose_cam_path, num_frame=opt.num_frame, isHres=opt.isHres)
     train_loader = DataLoader(train_dataset, batch_size=opt.batch_size, shuffle=True)
 
     model = Pix2Mesh(opt)
 
     for fn in os.listdir(opt.log_dir):
         os.remove(os.path.join(opt.log_dir, fn))
-
-    model.load_state(model.net_G.hmr, opt.hmr_state_path)
-    if opt.hmr_no_grad:
-        model.set_requires_grad(model.net_G.hmr, requires_grad=False)
 
     if opt.resume:
         model.load_checkpoint(opt.start_epoch)

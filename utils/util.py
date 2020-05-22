@@ -120,12 +120,19 @@ def load_obj(obj_file):
 
         return obj_dict
 
-def get_f2vts(uv_mapping_path, fill_back=False):
+def get_f2vts_from_obj(uv_mapping_path, fill_back=False):
     obj_info = load_obj(uv_mapping_path)
 
     vts = obj_info['vts']
-    vts[:, 1] = 1 - vts[:, 1]
     faces_vts = obj_info['faces_vts']
+
+    f2vts = get_f2vts(vts, faces_vts, fill_back=fill_back)
+
+    return f2vts
+
+def get_f2vts(vts, faces_vts, fill_back=False):
+
+    vts[:, 1] = 1 - vts[:, 1]
 
     if fill_back:
         faces_vts = np.concatenate((faces_vts, faces_vts[:, ::-1]), axis=0)
