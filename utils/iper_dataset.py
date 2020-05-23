@@ -7,7 +7,9 @@ from utils.util import load_obj, load_pickle_file
 
 class iPER_Dataset(Dataset):
     def __init__(self, imgs_path, pose_shape_pkl_path, image_size=256):
-        self.imgs_path_list = [os.path.join(imgs_path, img_fn) for img_fn in os.listdir(imgs_path)]
+        imgs_fn_list = os.listdir(imgs_path)
+        imgs_fn_list.sort()
+        self.imgs_path_list = [os.path.join(imgs_path, img_fn) for img_fn in imgs_fn_list]
         self.pose_shape_pkl = load_pickle_file(pose_shape_pkl_path)
         self.Resize = transforms.Resize(image_size)
         self.ToTensor = transforms.ToTensor()

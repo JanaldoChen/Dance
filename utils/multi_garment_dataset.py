@@ -29,9 +29,9 @@ class Multi_Garment_Dataset(Dataset):
         smpl_registered_pkl = load_pickle_file(os.path.join(self.data_root, people_ID, 'smpl_registered.pkl'))
         
         shape = torch.from_numpy(smpl_registered_pkl['betas']).float()
+        pose = torch.from_numpy(smpl_registered_pkl['pose']).float()
+        cam = torch.from_numpy(smpl_registered_pkl['camera']).float()
         
-        #poses = torch.from_numpy(smpl_registered_pkl['pose']).float().unsqueeze(0)
-        #cam = torch.from_numpy(smpl_registered_pkl['camera']).float()
         IDs = np.random.choice(self.poses.shape[0], self.num_frame)
         poses = torch.from_numpy(self.poses[IDs]).float()
         cams = torch.from_numpy(self.cams[IDs]).float()
@@ -50,6 +50,8 @@ class Multi_Garment_Dataset(Dataset):
 
         output = {
             'shape': shape,
+            'pose': pose,
+            'cam': cam,
             'poses': poses,
             'cams': cams,
             'v_personal': v_personal,
