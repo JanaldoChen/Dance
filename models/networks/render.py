@@ -53,6 +53,22 @@ class SMPLRenderer(nn.Module):
         # fill back
         if self.fill_back:
             faces = np.concatenate((faces, faces[:, ::-1]), axis=0)
+            
+        # light
+        self.light_intensity_ambient = 1
+        self.light_intensity_directional = 0
+        self.light_color_ambient = [1, 1, 1]
+        self.light_color_directional = [1, 1, 1]
+        self.light_direction = [0, 1, 0]
+    
+    def set_ambient_light(self, int_dir=0.3, int_amb=0.7, direction=(1, 0.5, 1)):
+        self.light_intensity_directional = int_dir
+        self.light_intensity_ambient = int_amb
+        if direction is not None:
+            self.light_direction = direction
+    
+    def set_bg_color(self, background_color=(1, 1, 1)):
+        self.background_color = background_color
         
     def forward(self, vertices, texture=None):
         if texture is None:
@@ -66,7 +82,21 @@ class SMPLRenderer(nn.Module):
             bs = vertices.shape[0]
             faces = self.faces.repeat(bs, 1, 1)
             
-        #texture = texture.clone()
+        if texture is None:
+            texture = self.debug_textures().to(vertices.device)
+            texture = texture.unsqueeze(0).repeat(bs, 1, 1, 1, 1, 1)
+        # lighting is inplace operation
+        texture = texture.clone()
+        # lighting
+        faces_lighting = nr.vertices_to_faces(vertices, faces)
+        texture = nr.lighting(
+            faces_lighting,
+            texture,
+            self.light_intensity_ambient,
+            self.light_intensity_directional,
+            self.light_color_ambient,
+            self.light_color_directional,
+            self.light_direction)
         # set offset_z for persp proj
         #proj_verts = self.proj_func(vertices, cam)
         # flipping the y-axis here to make it align with the image coordinate system!
@@ -178,7 +208,7 @@ class SMPLRenderer(nn.Module):
         vertices = torch.stack([u, v, z], dim=-1)
         return vertices
     
-    def extract_tex(self, uv_img, uv_sampler):
+    def extract_tex(self, uv_img, uv_sampler, repeat=True):
         """
         :param uv_img: (bs, 3, h, w)
         :param uv_sampler: (bs, nf, T*T, 2)
@@ -192,7 +222,8 @@ class SMPLRenderer(nn.Module):
         # (bs, nf, T, T, 3)
         tex = tex.permute(0, 2, 3, 4, 1)
         # (bs, nf, T, T, T, 3)
-        tex = tex.unsqueeze(4).repeat(1, 1, 1, 1, self.tex_size, 1)
+        if repeat:
+            tex = tex.unsqueeze(4).repeat(1, 1, 1, 1, self.tex_size, 1)
 
         return tex
     
@@ -216,7 +247,6 @@ class SMPLRenderer(nn.Module):
     
     def points_to_sampler(self, f2vts):
         """
-        :param coords: [2, T*T]
         :param f2vts: [batch size, number of faces, 3, 2]
         :return: [batch_size, number of faces, T*T, 2]
         """
@@ -234,13 +264,13 @@ class SMPLRenderer(nn.Module):
         samples = torch.clamp(samples, min=-1.0, max=1.0)
         return samples
     
-    def extract_tex_from_image(self, images, vertices):
+    def extract_tex_from_image(self, images, vertices, repeat=True):
         bs = images.shape[0]
         faces = self.faces.repeat(bs, 1, 1)
 
         sampler = self.dynamic_sampler(vertices, faces)  # (bs, nf, T*T, 2)
 
-        tex = self.extract_tex(images, sampler)
+        tex = self.extract_tex(images, sampler, repeat=repeat)
 
         return tex
     
